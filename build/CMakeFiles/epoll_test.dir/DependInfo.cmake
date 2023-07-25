@@ -8,7 +8,7 @@ set(CMAKE_DEPENDS_LANGUAGES
 
 # The set of dependency files which are needed:
 set(CMAKE_DEPENDS_DEPENDENCY_FILES
-  "/home/zhaobowen/git/epoll-test/main.cpp" "CMakeFiles/GS-DDS-Test.dir/main.cpp.o" "gcc" "CMakeFiles/GS-DDS-Test.dir/main.cpp.o.d"
+  "/home/zhaobowen/git/epoll-test/main.cpp" "CMakeFiles/epoll_test.dir/main.cpp.o" "gcc" "CMakeFiles/epoll_test.dir/main.cpp.o.d"
   )
 
 # Targets to which this target links.

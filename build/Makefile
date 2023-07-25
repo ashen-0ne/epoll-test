@@ -117,41 +117,41 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named GS-DDS-Test
+# Target rules for targets named epoll_test
 
 # Build rule for target.
-GS-DDS-Test: cmake_check_build_system
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 GS-DDS-Test
-.PHONY : GS-DDS-Test
+epoll_test: cmake_check_build_system
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/Makefile2 epoll_test
+.PHONY : epoll_test
 
 # fast build rule for target.
-GS-DDS-Test/fast:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/GS-DDS-Test.dir/build.make CMakeFiles/GS-DDS-Test.dir/build
-.PHONY : GS-DDS-Test/fast
+epoll_test/fast:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/epoll_test.dir/build.make CMakeFiles/epoll_test.dir/build
+.PHONY : epoll_test/fast
 
-CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.o: CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.cpp.o
-.PHONY : CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.o
+main.o: main.cpp.o
+.PHONY : main.o
 
 # target to build an object file
-CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.cpp.o:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/GS-DDS-Test.dir/build.make CMakeFiles/GS-DDS-Test.dir/CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.cpp.o
-.PHONY : CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.cpp.o
+main.cpp.o:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/epoll_test.dir/build.make CMakeFiles/epoll_test.dir/main.cpp.o
+.PHONY : main.cpp.o
 
-CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.i: CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.cpp.i
-.PHONY : CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.i
+main.i: main.cpp.i
+.PHONY : main.i
 
 # target to preprocess a source file
-CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.cpp.i:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/GS-DDS-Test.dir/build.make CMakeFiles/GS-DDS-Test.dir/CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.cpp.i
-.PHONY : CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.cpp.i
+main.cpp.i:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/epoll_test.dir/build.make CMakeFiles/epoll_test.dir/main.cpp.i
+.PHONY : main.cpp.i
 
-CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.s: CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.cpp.s
-.PHONY : CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.s
+main.s: main.cpp.s
+.PHONY : main.s
 
 # target to generate assembly for a file
-CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.cpp.s:
-	$(MAKE) $(MAKESILENT) -f CMakeFiles/GS-DDS-Test.dir/build.make CMakeFiles/GS-DDS-Test.dir/CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.cpp.s
-.PHONY : CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.cpp.s
+main.cpp.s:
+	$(MAKE) $(MAKESILENT) -f CMakeFiles/epoll_test.dir/build.make CMakeFiles/epoll_test.dir/main.cpp.s
+.PHONY : main.cpp.s
 
 # Help Target
 help:
@@ -161,10 +161,10 @@ help:
 	@echo "... depend"
 	@echo "... edit_cache"
 	@echo "... rebuild_cache"
-	@echo "... GS-DDS-Test"
-	@echo "... CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.o"
-	@echo "... CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.i"
-	@echo "... CMakeFiles/3.21.0/CompilerIdCXX/CMakeCXXCompilerId.s"
+	@echo "... epoll_test"
+	@echo "... main.o"
+	@echo "... main.i"
+	@echo "... main.s"
 .PHONY : help
 
 
