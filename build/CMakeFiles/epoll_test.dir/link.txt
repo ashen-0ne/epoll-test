@@ -1,1 +1,1 @@
-/usr/bin/c++ -rdynamic CMakeFiles/epoll_test.dir/main.cpp.o -o cmake_build/epoll_test 
+/usr/bin/c++ -rdynamic CMakeFiles/epoll_test.dir/main.cpp.o CMakeFiles/epoll_test.dir/src/test.cpp.o -o cmake_build/epoll_test  -lpthread 

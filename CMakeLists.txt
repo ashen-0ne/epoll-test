@@ -8,7 +8,8 @@ include_directories(
 )
 
 file(GLOB_RECURSE API_SRC_LIST 
- "main.cpp" "*.h"
+ "test.h" "test.cpp" "main.cpp"
 )
 
 add_executable(${PROJECT_NAME} ${API_SRC_LIST})
+target_link_libraries(${PROJECT_NAME} pthread)

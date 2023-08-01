@@ -210,15 +210,6 @@ CMAKE_STRIP:FILEPATH=/usr/bin/strip
 CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE
 
 //Value Computed by CMake
-GS-DDS-Test_BINARY_DIR:STATIC=/home/zhaobowen/git/epoll-test/build
-
-//Value Computed by CMake
-GS-DDS-Test_IS_TOP_LEVEL:STATIC=ON
-
-//Value Computed by CMake
-GS-DDS-Test_SOURCE_DIR:STATIC=/home/zhaobowen/git/epoll-test
-
-//Value Computed by CMake
 epoll_test_BINARY_DIR:STATIC=/home/zhaobowen/git/epoll-test/build
 
 //Value Computed by CMake

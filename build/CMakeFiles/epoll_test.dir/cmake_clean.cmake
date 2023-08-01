@@ -1,6 +1,8 @@
 file(REMOVE_RECURSE
   "CMakeFiles/epoll_test.dir/main.cpp.o"
   "CMakeFiles/epoll_test.dir/main.cpp.o.d"
+  "CMakeFiles/epoll_test.dir/src/test.cpp.o"
+  "CMakeFiles/epoll_test.dir/src/test.cpp.o.d"
   "cmake_build/epoll_test"
   "cmake_build/epoll_test.pdb"
 )
