@@ -10,6 +10,7 @@
 #include <thread>
 #include <vector>
 #include <future>
+#include <fcntl.h>
 
 class epoll_test
 {

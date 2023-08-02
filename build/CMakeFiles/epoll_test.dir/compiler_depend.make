@@ -223,6 +223,11 @@ CMakeFiles/epoll_test.dir/main.cpp.o: ../main.cpp \
   /usr/include/c++/7/atomic \
   /usr/include/c++/7/bits/atomic_futex.h \
   /usr/include/c++/7/bits/std_function.h \
+  /usr/include/fcntl.h \
+  /usr/include/x86_64-linux-gnu/bits/fcntl.h \
+  /usr/include/x86_64-linux-gnu/bits/fcntl-linux.h \
+  /usr/include/linux/falloc.h \
+  /usr/include/x86_64-linux-gnu/bits/stat.h \
   /usr/include/getopt.h \
   /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
   /usr/include/x86_64-linux-gnu/bits/getopt_ext.h
@@ -448,12 +453,19 @@ CMakeFiles/epoll_test.dir/src/test.cpp.o: ../src/test.cpp \
   /usr/include/c++/7/condition_variable \
   /usr/include/c++/7/atomic \
   /usr/include/c++/7/bits/atomic_futex.h \
-  /usr/include/c++/7/bits/std_function.h
+  /usr/include/c++/7/bits/std_function.h \
+  /usr/include/fcntl.h \
+  /usr/include/x86_64-linux-gnu/bits/fcntl.h \
+  /usr/include/x86_64-linux-gnu/bits/fcntl-linux.h \
+  /usr/include/linux/falloc.h \
+  /usr/include/x86_64-linux-gnu/bits/stat.h
 
 
 ../src/test.cpp:
 
 /usr/include/x86_64-linux-gnu/bits/getopt_core.h:
+
+/usr/include/fcntl.h:
 
 /usr/include/c++/7/future:
 
@@ -516,6 +528,8 @@ CMakeFiles/epoll_test.dir/src/test.cpp.o: ../src/test.cpp \
 /usr/include/c++/7/array:
 
 /usr/include/c++/7/ostream:
+
+/usr/include/x86_64-linux-gnu/bits/fcntl-linux.h:
 
 /usr/include/c++/7/bits/locale_classes.h:
 
@@ -693,11 +707,15 @@ CMakeFiles/epoll_test.dir/src/test.cpp.o: ../src/test.cpp \
 
 /usr/include/x86_64-linux-gnu/bits/stdint-uintn.h:
 
+/usr/include/linux/falloc.h:
+
 /usr/include/c++/7/bits/memoryfwd.h:
 
 /usr/include/c++/7/cstdint:
 
 /usr/include/stdc-predef.h:
+
+/usr/include/x86_64-linux-gnu/bits/fcntl.h:
 
 /usr/include/c++/7/bits/char_traits.h:
 
@@ -738,6 +756,8 @@ CMakeFiles/epoll_test.dir/src/test.cpp.o: ../src/test.cpp \
 /usr/include/x86_64-linux-gnu/bits/sockaddr.h:
 
 /usr/include/x86_64-linux-gnu/bits/wchar.h:
+
+/usr/include/x86_64-linux-gnu/bits/stat.h:
 
 /usr/include/x86_64-linux-gnu/bits/types.h:
 

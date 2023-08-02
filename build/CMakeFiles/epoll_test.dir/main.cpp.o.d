@@ -173,6 +173,9 @@ CMakeFiles/epoll_test.dir/main.cpp.o: \
  /usr/include/c++/7/bits/std_mutex.h \
  /usr/include/c++/7/condition_variable /usr/include/c++/7/atomic \
  /usr/include/c++/7/bits/atomic_futex.h \
- /usr/include/c++/7/bits/std_function.h /usr/include/getopt.h \
- /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
+ /usr/include/c++/7/bits/std_function.h /usr/include/fcntl.h \
+ /usr/include/x86_64-linux-gnu/bits/fcntl.h \
+ /usr/include/x86_64-linux-gnu/bits/fcntl-linux.h \
+ /usr/include/linux/falloc.h /usr/include/x86_64-linux-gnu/bits/stat.h \
+ /usr/include/getopt.h /usr/include/x86_64-linux-gnu/bits/getopt_core.h \
  /usr/include/x86_64-linux-gnu/bits/getopt_ext.h
