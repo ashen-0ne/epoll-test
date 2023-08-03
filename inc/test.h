@@ -11,12 +11,14 @@
 #include <vector>
 #include <future>
 #include <fcntl.h>
+#include <fstream>
 
 class epoll_test
 {
 public:
     void udp_test(bool is_server);
     void tcp_test(bool is_server);
+    void file_transport_test(bool is_server);
 };
 
 #endif

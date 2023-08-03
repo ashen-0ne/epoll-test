@@ -10,14 +10,27 @@ void epoll_test::tcp_test(bool is_server)
         addr.sin_port = ntohs(3000);
 
         int tcpsocket = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
-        if(bind(tcpsocket,reinterpret_cast<sockaddr *>(&addr),sizeof(addr)) == -1)
+
+        if(tcpsocket == -1)
         {
-            std::cout<<"bind failed!"<<std::endl;
+            std::cerr<<"tcpsocket create failed!"<<std::endl;
+            return;
         }
 
-        std::vector<int> conn_vec;
+        if(bind(tcpsocket,reinterpret_cast<sockaddr *>(&addr),sizeof(addr)) == -1)
+        {
+            std::cerr<<"bind failed!"<<std::endl;
+            return;
+        }
 
         int epoll_conn_fd = epoll_create(100);
+
+        if(epoll_conn_fd == -1)
+        {
+            std::cerr<<"epoll_create failed!"<<std::endl;
+            return;
+        }
+
         auto recv_func = [&epoll_conn_fd]()->void{
         struct epoll_event ep_events[100];
             while(true)
@@ -66,9 +79,23 @@ void epoll_test::tcp_test(bool is_server)
         ep_event.events = EPOLLIN;
 
         int epoll_fd = epoll_create(100);
-        epoll_ctl(epoll_fd,EPOLL_CTL_ADD,tcpsocket,&ep_event);
+        if(epoll_fd == -1)
+        {
+            std::cerr<<"epoll_create failed!"<<std::endl;
+            return;
+        }
+        
+        if(epoll_ctl(epoll_fd,EPOLL_CTL_ADD,tcpsocket,&ep_event) == -1)
+        {
+            std::cerr<<"epoll_ctl failed!"<<std::endl;
+            return;
+        }
 
-        listen(tcpsocket,10);
+        if(listen(tcpsocket,10) == -1)
+        {
+            std::cerr<<"listen failed!"<<std::endl;
+            return;
+        }
 
         while(true)
         {
@@ -139,7 +166,8 @@ void epoll_test::tcp_test(bool is_server)
             std::string temp1("012345678901234567890123456789");
             std::string temp2("abcdefghijabcdefghijabcdefghij");
 
-            for(int i = 0;i < 5;++i)
+            // for(int i = 0;i < 5;++i)
+            while(true)
             {
                 if(send(tcpsocket1,temp1.c_str(),temp1.size(),0) != -1)
                 {
@@ -149,21 +177,21 @@ void epoll_test::tcp_test(bool is_server)
                 {
                     std::cout<<"tcpsocket2 send successful!"<<std::endl;
                 }
-                std::this_thread::sleep_for(std::chrono::seconds(1));
+                std::this_thread::sleep_for(std::chrono::milliseconds(10));
             }
 
-            shutdown(tcpsocket1,SHUT_RDWR);
+            // shutdown(tcpsocket1,SHUT_RDWR);
 
-            for(int i = 0;i < 10;++i)
-            {
-                if(send(tcpsocket2,temp2.c_str(),temp2.size(),0) != -1)
-                {
-                    std::cout<<"tcpsocket2 send successful!"<<std::endl;
-                }
-                std::this_thread::sleep_for(std::chrono::seconds(1));
-            }
+            // for(int i = 0;i < 10;++i)
+            // {
+            //     if(send(tcpsocket2,temp2.c_str(),temp2.size(),0) != -1)
+            //     {
+            //         std::cout<<"tcpsocket2 send successful!"<<std::endl;
+            //     }
+            //     std::this_thread::sleep_for(std::chrono::seconds(1));
+            // }
 
-            shutdown(tcpsocket2,SHUT_RDWR);
+            // shutdown(tcpsocket2,SHUT_RDWR);
         }
     }
 }
@@ -248,5 +276,215 @@ void epoll_test::udp_test(bool is_server)
                 }
             }
         }
+    }
+}
+
+void epoll_test::file_transport_test(bool is_server)
+{
+    if(is_server)
+    {
+        struct sockaddr_in addr;
+        addr.sin_family = AF_INET;
+        addr.sin_addr.s_addr = inet_addr("192.168.2.100");
+        addr.sin_port = ntohs(3000);
+
+        int tcpsocket = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+
+        if(tcpsocket == -1)
+        {
+            std::cerr<<"tcpsocket create failed!"<<std::endl;
+            return;
+        }
+
+        if(bind(tcpsocket,reinterpret_cast<sockaddr *>(&addr),sizeof(addr)) == -1)
+        {
+            std::cerr<<"bind failed!"<<std::endl;
+            return;
+        }
+
+        int epoll_conn_fd = epoll_create(100);
+
+        if(epoll_conn_fd == -1)
+        {
+            std::cerr<<"epoll_create failed!"<<std::endl;
+            return;
+        }
+
+        auto recv_func = [](int conn_fd,std::string ipandport)->bool{
+            struct epoll_event ep_events[100];
+            bool is_connecting = true;
+            std::fstream if_temp(ipandport,std::ios::out);
+            if(if_temp.is_open())
+            {
+                std::cout<<"file "<<ipandport<<" open successful!"<<std::endl;
+            }
+            else
+            {
+                std::cerr<<"file "<<ipandport<<" open failed!"<<std::endl;
+                return false;
+            }
+            while(is_connecting)
+            {
+                int epoll_conn_fd = epoll_create(100);
+
+                if(epoll_conn_fd == -1)
+                {
+                    std::cerr<<"epoll_create failed!"<<std::endl;
+                    return false;
+                }
+
+                struct epoll_event ep_event_temp;
+                ep_event_temp.data.fd = conn_fd;
+                ep_event_temp.events = EPOLLIN | EPOLLET;
+            
+                if(epoll_ctl(epoll_conn_fd,EPOLL_CTL_ADD,conn_fd,&ep_event_temp) == -1)
+                {
+                    std::cerr<<"epoll add failed!"<<std::endl;
+                    return false;
+                }
+
+                int nfds = epoll_wait(epoll_conn_fd,ep_events,100,-1);
+                if(nfds != -1)
+                {
+                    for(int i = 0;i < nfds;++i)
+                    {
+                        char temp[10000];
+                        while(true)
+                        {
+                            int len = recv(ep_events[i].data.fd,temp,10000,0);
+                            if(len > 0)
+                            {
+                                if_temp << temp;
+                            }
+                            else if(len == 0)
+                            {
+                                if(epoll_ctl(epoll_conn_fd,EPOLL_CTL_DEL,ep_events[i].data.fd,nullptr) != -1)
+                                {
+                                    std::cout<<"remote leave connection successful!"<<std::endl;
+                                    is_connecting = false;
+                                }
+                                break;
+                            }
+                            else
+                            {
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            return true;
+        };
+
+        struct epoll_event ep_event,ep_events[100];
+        ep_event.data.fd = tcpsocket;
+        ep_event.events = EPOLLIN;
+
+        int epoll_fd = epoll_create(100);
+        if(epoll_fd == -1)
+        {
+            std::cerr<<"epoll_create failed!"<<std::endl;
+            return;
+        }
+        
+        if(epoll_ctl(epoll_fd,EPOLL_CTL_ADD,tcpsocket,&ep_event) == -1)
+        {
+            std::cerr<<"epoll_ctl failed!"<<std::endl;
+            return;
+        }
+
+        if(listen(tcpsocket,10) == -1)
+        {
+            std::cerr<<"listen failed!"<<std::endl;
+            return;
+        }
+
+        std::vector<std::future<bool>> fu_vec;
+
+        while(true)
+        {
+            int nfds = epoll_wait(epoll_fd,ep_events,100,-1);
+            if(nfds != -1)
+            {
+                for(int i = 0;i < nfds;++i)
+                {
+                    if(ep_events[i].data.fd == tcpsocket && ep_events[i].events == EPOLLIN)
+                    {
+                        struct sockaddr_in sock_addr_temp;
+                        socklen_t sock_len = sizeof(sockaddr_in);
+                        int conn_fd = accept(tcpsocket,reinterpret_cast<sockaddr*>(&sock_addr_temp),&sock_len);
+                        int flag, old_flag;
+                        old_flag = flag = fcntl(conn_fd, F_GETFL, 0);
+                        flag |= O_NONBLOCK;
+                        fcntl(conn_fd, F_SETFL, flag);
+                        if(conn_fd != -1)
+                        {
+                            std::cout<<"accept connection!"<<std::endl;
+                            std::cout<<"remote ip:"<<inet_ntoa(sock_addr_temp.sin_addr)<<std::endl;
+                            std::cout<<"remote port:"<<htons(sock_addr_temp.sin_port)<<std::endl;
+
+                            std::string ipandport = inet_ntoa(sock_addr_temp.sin_addr) + std::string(":") + std::to_string(htons(sock_addr_temp.sin_port));
+
+                            fu_vec.push_back(std::async(std::launch::async,recv_func,conn_fd,ipandport));
+                        }
+                    }
+                }
+            }
+        }
+        for(int i = 0;i < fu_vec.size();++i)
+        {
+            fu_vec[i].get();
+        }
+    }
+    else
+    {
+        struct sockaddr_in remote_addr;
+        remote_addr.sin_family = AF_INET;
+        remote_addr.sin_addr.s_addr = inet_addr("192.168.2.100");
+        remote_addr.sin_port = ntohs(3000);
+
+        int tcpsocket1 = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+        // int tcpsocket2 = socket(AF_INET,SOCK_STREAM,IPPROTO_TCP);
+        
+        if(connect(tcpsocket1,reinterpret_cast<sockaddr*>(&remote_addr),sizeof(sockaddr)) == -1)
+        {
+            std::cout<<"tcpsocket1 connect failed!"<<std::endl;
+            return;
+        }
+        // if(connect(tcpsocket2,reinterpret_cast<sockaddr*>(&remote_addr),sizeof(sockaddr)) == -1)
+        // {
+        //     std::cout<<"tcpsocket1 connect failed!"<<std::endl;
+        //     return;
+        // }
+        {
+            // std::string temp1("012345678901234567890123456789");
+            // std::string temp2("abcdefghijabcdefghijabcdefghij");
+
+            // for(int i = 0;i < 5;++i)
+
+            std::fstream f_temp("nohup.out");
+            // while(true)
+            // {
+            //     if(send(tcpsocket1,temp1.c_str(),temp1.size(),0) != -1)
+            //     {
+            //         std::cout<<"tcpsocket1 send successful!"<<std::endl;
+            //     }
+                // if(send(tcpsocket2,temp2.c_str(),temp2.size(),0) != -1)
+                // {
+                //     std::cout<<"tcpsocket2 send successful!"<<std::endl;
+                // }
+                // std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            // }
+            char buffer[10000];
+            while(!f_temp.eof())
+            {
+                f_temp.read(buffer,sizeof(buffer));
+                if(send(tcpsocket1,buffer,sizeof(buffer),0) != -1)
+                {
+                    std::cout<<"tcpsocket1 send successful!"<<std::endl;
+                }
+            }
+        }
+        shutdown(tcpsocket1,SHUT_RDWR);
     }
 }
