@@ -314,54 +314,118 @@ void epoll_test::file_transport_test(bool is_server)
                 std::cerr<<"file "<<ipandport<<" open failed!"<<std::endl;
                 return false;
             }
+
+            int epoll_conn_fd = epoll_create(100);
+
+            if(epoll_conn_fd == -1)
+            {
+                std::cerr<<"epoll_create failed!"<<std::endl;
+                return false;
+            }
+
+            struct epoll_event ep_event_temp;
+            ep_event_temp.data.fd = conn_fd;
+            ep_event_temp.events = EPOLLIN | EPOLLET;
+        
+            if(epoll_ctl(epoll_conn_fd,EPOLL_CTL_ADD,conn_fd,&ep_event_temp) == -1)
+            {
+                std::cerr<<"epoll add failed!"<<std::endl;
+                return false;
+            }
+            
+            bool is_recving{false};
+            int64_t file_length{0};
+            int64_t offset{0};
+
             while(is_connecting)
             {
-                int epoll_conn_fd = epoll_create(100);
-
-                if(epoll_conn_fd == -1)
-                {
-                    std::cerr<<"epoll_create failed!"<<std::endl;
-                    return false;
-                }
-
-                struct epoll_event ep_event_temp;
-                ep_event_temp.data.fd = conn_fd;
-                ep_event_temp.events = EPOLLIN | EPOLLET;
-            
-                if(epoll_ctl(epoll_conn_fd,EPOLL_CTL_ADD,conn_fd,&ep_event_temp) == -1)
-                {
-                    std::cerr<<"epoll add failed!"<<std::endl;
-                    return false;
-                }
-
                 int nfds = epoll_wait(epoll_conn_fd,ep_events,100,-1);
                 if(nfds != -1)
                 {
                     for(int i = 0;i < nfds;++i)
                     {
-                        char temp[10000];
-                        while(true)
+                        if(!is_recving)
                         {
-                            memset(temp,0,10000);
-                            int len = recv(ep_events[i].data.fd,temp,10000,0);
-                            if(len > 0)
+                            is_recving = true;
+                            int len = recv(ep_events[i].data.fd,&file_length,sizeof(int64_t),0);
+                            std::cout<<"file length is "<<file_length<<std::endl;
+
+                            char temp[10000];
+                            while(true)
                             {
-                                if_temp.write(temp,len);
-                            }
-                            else if(len == 0)
-                            {
-                                if(epoll_ctl(epoll_conn_fd,EPOLL_CTL_DEL,ep_events[i].data.fd,nullptr) != -1)
+                                memset(temp,0,10000);
+                                int len = recv(ep_events[i].data.fd,temp,10000,0);
+                                if(len > 0)
                                 {
-                                    std::cout<<"remote leave connection successful!"<<std::endl;
-                                    is_connecting = false;
+                                    if_temp.write(temp,len);
+                                    offset += len;
+                                    std::cout<<"offset == "<<offset<<std::endl;
                                 }
-                                break;
-                            }
-                            else
-                            {
-                                break;
+                                else if(len == 0)
+                                {
+                                    if(offset == file_length)
+                                    {
+                                        std::cout<<"recv file finish!"<<std::endl;
+                                        is_recving = false;
+                                        if(epoll_ctl(epoll_conn_fd,EPOLL_CTL_DEL,ep_events[i].data.fd,nullptr) != -1)
+                                        {
+                                            std::cout<<"remote leave connection successful!"<<std::endl;
+                                            is_connecting = false;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        std::cout<<"recv not finish and connection end"<<std::endl;
+                                    }
+                                    break;
+                                }
+                                else
+                                {
+                                    std::cout<<"offset == "<<offset<<" file_length == "<<file_length<<std::endl;
+                                    std::cout<<"recv continuing"<<std::endl;
+                                    break;
+                                }
                             }
                         }
+                        else
+                        {
+                            char temp[10000];
+                            while(true)
+                            {
+                                memset(temp,0,10000);
+                                int len = recv(ep_events[i].data.fd,temp,10000,0);
+                                if(len > 0)
+                                {
+                                    if_temp.write(temp,len);
+                                    offset += len;
+                                    std::cout<<"offset == "<<offset<<std::endl;
+                                }
+                                else if(len == 0)
+                                {
+                                    if(offset == file_length)
+                                    {
+                                        std::cout<<"recv file finish!"<<std::endl;
+                                        is_recving = false;
+                                        if(epoll_ctl(epoll_conn_fd,EPOLL_CTL_DEL,ep_events[i].data.fd,nullptr) != -1)
+                                        {
+                                            std::cout<<"remote leave connection successful!"<<std::endl;
+                                            is_connecting = false;
+                                        }
+                                    }
+                                    else
+                                    {
+                                        std::cout<<"recv not finish and connection end"<<std::endl;
+                                    }
+                                    break;
+                                }
+                                else
+                                {
+                                    std::cout<<"offset == "<<offset<<" file_length == "<<file_length<<std::endl;
+                                    std::cout<<"recv continuing"<<std::endl;
+                                    break;
+                                }
+                            }
+                        }  
                     }
                 }
             }
@@ -445,6 +509,32 @@ void epoll_test::file_transport_test(bool is_server)
         else
         {
             std::cout<<"tcpsocket1 connect successful!"<<std::endl;
+
+            std::ifstream f_temp_1("nohup.out",std::ios::binary | std::ios::in | std::ios::ate);
+            std::streampos pos = f_temp_1.tellg();
+            int64_t file_length;
+
+            if(pos <= std::numeric_limits<int64_t>::max())
+            {
+                file_length = static_cast<int64_t>(pos);
+                std::cout<<"file size is "<<file_length<<std::endl;
+            }
+            else
+            {
+                std::cerr<<"file size is too large!"<<std::endl;
+                return;
+            }
+
+            if(f_temp_1.is_open())
+            {
+                f_temp_1.close();
+            }
+
+            if(send(tcpsocket1,&file_length,sizeof(int64_t),0) != -1)
+            {
+                std::cout<<"tcpsocket1 send file_length successful!"<<std::endl;
+            }
+
             std::ifstream f_temp("nohup.out",std::ios::binary | std::ios::in);
 
             if(!f_temp.is_open())
@@ -458,6 +548,7 @@ void epoll_test::file_transport_test(bool is_server)
             }
 
             char buffer[10000];
+            int i = 0;
             while(!f_temp.eof())
             {
                 memset(buffer,0,10000);
@@ -466,6 +557,11 @@ void epoll_test::file_transport_test(bool is_server)
                 if(send(tcpsocket1,buffer,act_len,0) != -1)
                 {
                     std::cout<<"tcpsocket1 send successful!"<<std::endl;
+                }
+                ++i;
+                if(i % 1000 == 0)
+                {
+                    std::this_thread::sleep_for(std::chrono::seconds(1));
                 }
             }
             shutdown(tcpsocket1,SHUT_RDWR);
