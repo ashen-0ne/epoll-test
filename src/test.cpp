@@ -604,3 +604,43 @@ void epoll_test::file_transport_test(bool is_server)
         }
     }
 }
+
+void epoll_test::shm_test(bool is_server)
+{
+    int fd = shm_open("zbwtest",O_CREAT | O_RDWR,0777);
+    if(fd < 0)
+    {
+        std::cerr<<"shm_open failed!"<<std::endl;
+    }
+
+    if(ftruncate(fd,static_cast<off_t>(4096)) < 0)
+    {
+        std::cerr<<"ftruncate failed!"<<std::endl;
+        close(fd);
+        return;
+    }
+
+    void * ptr = mmap(nullptr,4096,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
+
+    if(ptr == nullptr)
+    {
+        std::cerr<<"mmap failed!"<<std::endl;
+        close(fd);
+        return;
+    }
+
+    if(is_server)
+    {
+        while(true)
+        {
+            printf("data:%s \n",static_cast<char *>(ptr));
+            std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+    }
+    else
+    {
+        sprintf(static_cast<char*>(ptr),"Hello World!");
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+        sprintf(static_cast<char*>(ptr),"Deep Dark Fantasy!");
+    }
+}

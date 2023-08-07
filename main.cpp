@@ -6,7 +6,8 @@ enum TRANSPORT_KIND
 {
 	UDP = 0,
 	TCP,
-	FTP
+	FTP,
+	SHM
 };
 TRANSPORT_KIND trans_kind = UDP;
 
@@ -39,6 +40,10 @@ void parseArgv(int argc,char ** argv)
 				else if(std::string(optarg) == "ftp")
 				{
 					trans_kind = FTP;
+				}
+				else if(std::string(optarg) == "shm")
+				{
+					trans_kind = SHM;
 				}
 				break;
 			}
@@ -74,9 +79,13 @@ int main(int argc,char ** argv)
 	{
 		t.tcp_test(is_server);
 	}
-	else
+	else if(trans_kind == FTP)
 	{
 		t.file_transport_test(is_server);
+	}
+	else if(trans_kind == SHM)
+	{
+		t.shm_test(is_server);
 	}
 
     return 0;

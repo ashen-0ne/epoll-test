@@ -12,6 +12,9 @@
 #include <future>
 #include <fcntl.h>
 #include <fstream>
+#include <sys/shm.h>
+#include <sys/mman.h>
+#include <unistd.h>
 
 class epoll_test
 {
@@ -19,6 +22,7 @@ public:
     void udp_test(bool is_server);
     void tcp_test(bool is_server);
     void file_transport_test(bool is_server);
+    void shm_test(bool is_server);
 };
 
 #endif

@@ -12,4 +12,4 @@ file(GLOB_RECURSE API_SRC_LIST
 )
 
 add_executable(${PROJECT_NAME} ${API_SRC_LIST})
-target_link_libraries(${PROJECT_NAME} pthread)
+target_link_libraries(${PROJECT_NAME} pthread rt)
