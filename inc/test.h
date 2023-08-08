@@ -12,9 +12,7 @@
 #include <future>
 #include <fcntl.h>
 #include <fstream>
-#include <sys/shm.h>
-#include <sys/mman.h>
-#include <unistd.h>
+#include "shmbuffer.h"
 
 class epoll_test
 {
