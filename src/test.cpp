@@ -607,53 +607,84 @@ void epoll_test::file_transport_test(bool is_server)
 
 void epoll_test::shm_test(bool is_server)
 {
-    int shm_size = 1024 * 1000;
-    int fd = shm_open("zbwtest",O_CREAT | O_RDWR,0777);
-    if(fd < 0)
-    {
-        std::cerr<<"shm_open failed!"<<std::endl;
-    }
+    int shm_size = 1024 * 5;
 
-    if(ftruncate(fd,static_cast<off_t>(shm_size)) < 0)
-    {
-        std::cerr<<"ftruncate failed!"<<std::endl;
-        close(fd);
-        return;
-    }
-
-    void * ptr = mmap(nullptr,shm_size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
-
-    if(ptr == nullptr)
-    {
-        std::cerr<<"mmap failed!"<<std::endl;
-        close(fd);
-        return;
-    }
-    memset(ptr,0,shm_size);
-
-    ShmBuffer shm_buffer;
-    shm_buffer.init(static_cast<char *>(ptr),shm_size);
+    int fd = 0;
 
     if(is_server)
     {
+        fd = shm_open("zbwtest",O_RDWR,0777);
+
+        if(fd < 0)
+        {
+            std::cerr<<"shm_open failed!"<<std::endl;
+        }
+
+        void * ptr = mmap(nullptr,shm_size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
+        if(ptr == nullptr)
+        {
+            std::cerr<<"mmap failed!"<<std::endl;
+            close(fd);
+            return;
+        }
+        
+        ShmBuffer shm_buffer;
+        shm_buffer.init(static_cast<char *>(ptr),shm_size);
+
         while(true)
         {
             char * data = new char(50);
+            memset(data,0,50);
             shm_buffer.read(&data);
             printf("data:%s \n",data);
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            // std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            // std::this_thread::sleep_for(std::chrono::seconds(1));
             delete data;
         }
     }
     else
     {
+        fd = shm_open("zbwtest",O_CREAT | O_RDWR,0777);
+
+        if(fd < 0)
+        {
+            std::cerr<<"shm_open failed!"<<std::endl;
+        }
+
+        if(ftruncate(fd,static_cast<off_t>(shm_size)) < 0)
+        {
+            std::cerr<<"ftruncate failed!"<<std::endl;
+            close(fd);
+            return;
+        }
+        
+        void * ptr = mmap(nullptr,shm_size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
+        if(ptr == nullptr)
+        {
+            std::cerr<<"mmap failed!"<<std::endl;
+            close(fd);
+            return;
+        }
+        memset(ptr,0,shm_size);
+        
+        ShmBuffer shm_buffer;
+        shm_buffer.init(static_cast<char *>(ptr),shm_size);
+
         for(int i = 0;i < 10000000;++i)
         {
             char data[50];
             sprintf(static_cast<char*>(data),"Hello World! index:%d",i);
             printf("%s \n",data);
-            shm_buffer.write(data,50);
-            std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            if(shm_buffer.write(data,50) == true)
+            {
+                std::cout<<"write successful!"<<std::endl;
+            }
+            else
+            {
+                std::cout<<"write failed!"<<std::endl;
+            }
+            // std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            // std::this_thread::sleep_for(std::chrono::seconds(1));
         }
     }
 }

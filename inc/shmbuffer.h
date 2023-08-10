@@ -5,6 +5,8 @@
 #include <sys/mman.h>
 #include <unistd.h>
 #include <string.h>
+#include <iostream>
+#include <fcntl.h>
 
 #define LEN_POS 4
 #define DATA_POS 8
@@ -21,6 +23,7 @@ private:
     int * m_read_pos{nullptr};
     char * m_buffer{nullptr};
     int m_size;
+    int lock_fd;
 };
 
 #endif
