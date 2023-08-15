@@ -21,6 +21,8 @@ bool ShmBuffer::write(char * data,int len)
 
     std::cout<<"m_write_pos:"<<*m_write_pos<<std::endl;
     std::cout<<"m_read_pos:"<<*m_read_pos<<std::endl;
+    std::cout<<"len:"<<len<<std::endl;
+    std::cout<<"sizeof(int64_t):"<<sizeof(int64_t)<<std::endl;
     std::cout<<"m_size:"<<m_size<<std::endl;
 
     if(*m_write_pos + 4 + len < m_size)
@@ -80,7 +82,7 @@ int ShmBuffer::read(char ** data)
     {
         lock.l_type = F_UNLCK;
         fcntl(lock_fd, F_SETLK, &lock);  // 释放文件锁
-        return false;
+        return 0;
     }
 
     if(len <= m_size - *m_read_pos - 4)

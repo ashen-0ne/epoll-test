@@ -607,19 +607,26 @@ void epoll_test::file_transport_test(bool is_server)
 
 void epoll_test::shm_test(bool is_server)
 {
-    int shm_size = 1024 * 5;
+    int shm_size = 1024 * 1024 * 10;
 
     int fd = 0;
 
+    fd = shm_open("zbwtest",O_CREAT | O_RDWR,0777);
+
+    if(fd < 0)
+    {
+        std::cerr<<"shm_open failed!"<<std::endl;
+    }
+
+    if(ftruncate(fd,static_cast<off_t>(shm_size)) < 0)
+    {
+        std::cerr<<"ftruncate failed!"<<std::endl;
+        close(fd);
+        return;
+    }
+
     if(is_server)
     {
-        fd = shm_open("zbwtest",O_RDWR,0777);
-
-        if(fd < 0)
-        {
-            std::cerr<<"shm_open failed!"<<std::endl;
-        }
-
         void * ptr = mmap(nullptr,shm_size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
         if(ptr == nullptr)
         {
@@ -631,33 +638,72 @@ void epoll_test::shm_test(bool is_server)
         ShmBuffer shm_buffer;
         shm_buffer.init(static_cast<char *>(ptr),shm_size);
 
+        // while(true)
+        // {
+        //     char * data = new char(50);
+        //     memset(data,0,50);
+        //     shm_buffer.read(&data);
+        //     printf("data:%s \n",data);
+        //     std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        //     // std::this_thread::sleep_for(std::chrono::seconds(1));
+        //     delete data;
+        // }
+        int64_t file_length = 0;
+        char * data = new char[10000];
+
         while(true)
         {
-            char * data = new char(50);
-            memset(data,0,50);
-            shm_buffer.read(&data);
-            printf("data:%s \n",data);
-            // std::this_thread::sleep_for(std::chrono::milliseconds(10));
+            if(shm_buffer.read(&data) == sizeof(int64_t))
+            {
+                std::cout<<"get file_length successful!"<<std::endl;
+                memcpy(&file_length,data,sizeof(int64_t));
+                std::cout<<"file_length is:"<<file_length<<std::endl;
+                break;
+            }
+        }
+
+        int64_t get_length = 0;
+        std::ofstream if_temp;
+        std::string file_name = "shm_recv_file";
+        if_temp.open(file_name,std::ios::binary | std::ios::out);
+
+        if(if_temp.is_open())
+        {
+            std::cout<<"file:"<<file_name<<" create successful!"<<std::endl;
+        }
+        else
+        {
+            std::cerr<<"file:"<<file_name<<" create failed!"<<std::endl;
+            return;
+        }
+
+        while(true)
+        {
+            int64_t round_length = shm_buffer.read(&data);
+            if(round_length != 0)
+            {
+                if_temp.write(data,round_length);
+                if_temp.flush();
+                std::cout<<"write file successful!"<<std::endl;
+            }
+            get_length += round_length;
+            if(get_length == file_length)
+            {
+                std::cout<<"shm_file recv finish!"<<std::endl;
+                break;
+            }
             // std::this_thread::sleep_for(std::chrono::seconds(1));
-            delete data;
+        }
+
+        delete [] data;
+        
+        if(if_temp.is_open())
+        {
+            if_temp.close();
         }
     }
     else
     {
-        fd = shm_open("zbwtest",O_CREAT | O_RDWR,0777);
-
-        if(fd < 0)
-        {
-            std::cerr<<"shm_open failed!"<<std::endl;
-        }
-
-        if(ftruncate(fd,static_cast<off_t>(shm_size)) < 0)
-        {
-            std::cerr<<"ftruncate failed!"<<std::endl;
-            close(fd);
-            return;
-        }
-        
         void * ptr = mmap(nullptr,shm_size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
         if(ptr == nullptr)
         {
@@ -670,21 +716,85 @@ void epoll_test::shm_test(bool is_server)
         ShmBuffer shm_buffer;
         shm_buffer.init(static_cast<char *>(ptr),shm_size);
 
-        for(int i = 0;i < 10000000;++i)
+        // for(int i = 0;i < 10000000;++i)
+        // {
+        //     char data[50];
+        //     sprintf(static_cast<char*>(data),"Hello World! index:%d",i);
+        //     printf("%s \n",data);
+        //     if(shm_buffer.write(data,50) == true)
+        //     {
+        //         std::cout<<"write successful!"<<std::endl;
+        //     }
+        //     else
+        //     {
+        //         std::cout<<"write failed!"<<std::endl;
+        //     }
+        //     std::this_thread::sleep_for(std::chrono::milliseconds(1));
+        //     // std::this_thread::sleep_for(std::chrono::seconds(1));
+        // }
+
+        std::ifstream f_temp_1("nohup.out",std::ios::binary | std::ios::in | std::ios::ate);
+        std::streampos pos = f_temp_1.tellg();
+        int64_t file_length;
+
+        if(pos <= std::numeric_limits<int64_t>::max())
         {
-            char data[50];
-            sprintf(static_cast<char*>(data),"Hello World! index:%d",i);
-            printf("%s \n",data);
-            if(shm_buffer.write(data,50) == true)
+            file_length = static_cast<int64_t>(pos);
+            std::cout<<"file size is "<<file_length<<std::endl;
+        }
+        else
+        {
+            std::cerr<<"file size is too large!"<<std::endl;
+            return;
+        }
+
+        if(f_temp_1.is_open())
+        {
+            f_temp_1.close();
+        }
+
+        while(true)
+        {
+            if(shm_buffer.write((char *)(&file_length),sizeof(int64_t)) == true)
             {
-                std::cout<<"write successful!"<<std::endl;
+                std::cout<<"write length successful!"<<std::endl;
+                break;
             }
-            else
+        }
+
+        std::ifstream f_temp("nohup.out",std::ios::binary | std::ios::in);
+
+        if(!f_temp.is_open())
+        {
+            std::cerr<<"f_temp open failed!"<<std::endl;
+            return;
+        }
+        else
+        {
+            std::cout<<"f_temp open successful!"<<std::endl;
+        }
+
+        char buffer[10000];
+        int j = 0;
+        while(!f_temp.eof())
+        {
+            memset(buffer,0,10000);
+            f_temp.read(buffer,sizeof(buffer));
+            size_t act_len = f_temp.gcount();
+            while(true)
             {
-                std::cout<<"write failed!"<<std::endl;
+                if(shm_buffer.write(buffer,act_len))
+                {
+                    std::cout<<"file send successful!"<<std::endl;
+                    // std::this_thread::sleep_for(std::chrono::seconds(1));
+                    break;
+                }
+                // std::this_thread::sleep_for(std::chrono::seconds(1));
             }
-            // std::this_thread::sleep_for(std::chrono::milliseconds(10));
-            // std::this_thread::sleep_for(std::chrono::seconds(1));
+        }
+        if(f_temp.is_open())
+        {
+            f_temp.close();
         }
     }
 }
