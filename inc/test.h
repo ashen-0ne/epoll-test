@@ -21,6 +21,10 @@ public:
     void tcp_test(bool is_server);
     void file_transport_test(bool is_server);
     void shm_test(bool is_server);
+
+private:
+    sem_t * m_recv_sem{nullptr};
+    sem_t * m_send_sem{nullptr};
 };
 
 #endif

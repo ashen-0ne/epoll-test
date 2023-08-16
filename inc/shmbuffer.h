@@ -7,6 +7,7 @@
 #include <string.h>
 #include <iostream>
 #include <fcntl.h>
+#include <semaphore.h>
 
 #define LEN_POS 4
 #define DATA_POS 8

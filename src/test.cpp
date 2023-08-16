@@ -625,8 +625,34 @@ void epoll_test::shm_test(bool is_server)
         return;
     }
 
+    // int fd_recv = shm_open("zbwtest_recv_sem",O_CREAT | O_RDWR,0777);
+    // int fd_send = shm_open("zbwtest_send_sem",O_CREAT | O_RDWR,0777);
+    
+    // if(ftruncate(fd_recv,static_cast<off_t>(32)) < 0)
+    // {
+    //     std::cerr<<"ftruncate failed!"<<std::endl;
+    //     close(fd);
+    //     return;
+    // }
+    
+    // if(ftruncate(fd_send,static_cast<off_t>(32)) < 0)
+    // {
+    //     std::cerr<<"ftruncate failed!"<<std::endl;
+    //     close(fd);
+    //     return;
+    // }
+
+    // m_recv_sem = (sem_t *)mmap(nullptr,sizeof(int),PROT_READ|PROT_WRITE,MAP_SHARED,fd_recv,0);
+    // m_send_sem = (sem_t *)mmap(nullptr,sizeof(int),PROT_READ|PROT_WRITE,MAP_SHARED,fd_send,0);
+
     if(is_server)
     {
+        m_recv_sem = sem_open("/my_recv_semaphore", O_CREAT, 0644, 0);
+        m_send_sem = sem_open("/my_send_semaphore", 0);
+
+        // sem_init(m_recv_sem,1,1);
+        // sem_init(m_send_sem,1,1);
+
         void * ptr = mmap(nullptr,shm_size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
         if(ptr == nullptr)
         {
@@ -651,59 +677,84 @@ void epoll_test::shm_test(bool is_server)
         int64_t file_length = 0;
         char * data = new char[10000];
 
-        while(true)
+        for(int i = 0;i < 10;++i)
         {
-            if(shm_buffer.read(&data) == sizeof(int64_t))
+            while(true)
             {
-                std::cout<<"get file_length successful!"<<std::endl;
-                memcpy(&file_length,data,sizeof(int64_t));
-                std::cout<<"file_length is:"<<file_length<<std::endl;
-                break;
+                sem_wait(m_recv_sem);
+                if(shm_buffer.read(&data) == sizeof(int64_t))
+                {
+                    std::cout<<"get file_length successful!"<<std::endl;
+                    memcpy(&file_length,data,sizeof(int64_t));
+                    std::cout<<"file_length is:"<<file_length<<std::endl;
+                    sem_post(m_send_sem);
+                    break;
+                }
             }
-        }
 
-        int64_t get_length = 0;
-        std::ofstream if_temp;
-        std::string file_name = "shm_recv_file";
-        if_temp.open(file_name,std::ios::binary | std::ios::out);
+            int64_t get_length = 0;
+            std::ofstream if_temp;
+            std::string file_name = "shm_recv_file_" + std::to_string(i);
+            if_temp.open(file_name,std::ios::binary | std::ios::out);
 
-        if(if_temp.is_open())
-        {
-            std::cout<<"file:"<<file_name<<" create successful!"<<std::endl;
-        }
-        else
-        {
-            std::cerr<<"file:"<<file_name<<" create failed!"<<std::endl;
-            return;
-        }
-
-        while(true)
-        {
-            int64_t round_length = shm_buffer.read(&data);
-            if(round_length != 0)
+            if(if_temp.is_open())
             {
-                if_temp.write(data,round_length);
-                if_temp.flush();
-                std::cout<<"write file successful!"<<std::endl;
+                std::cout<<"file:"<<file_name<<" create successful!"<<std::endl;
             }
-            get_length += round_length;
-            if(get_length == file_length)
+            else
             {
-                std::cout<<"shm_file recv finish!"<<std::endl;
-                break;
+                std::cerr<<"file:"<<file_name<<" create failed!"<<std::endl;
+                return;
             }
-            // std::this_thread::sleep_for(std::chrono::seconds(1));
+
+            while(true)
+            {
+                sem_wait(m_recv_sem);
+                int64_t round_length = shm_buffer.read(&data);
+                if(round_length != 0)
+                {
+                    if_temp.write(data,round_length);
+                    if_temp.flush();
+                    std::cout<<"write file successful!"<<std::endl;
+                    sem_post(m_send_sem);
+                }
+                get_length += round_length;
+                if(get_length == file_length)
+                {
+                    std::cout<<"shm_file recv finish!"<<std::endl;
+                    break;
+                }
+                // std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
+
+            
+            if(if_temp.is_open())
+            {
+                if_temp.close();
+            }
         }
 
         delete [] data;
-        
-        if(if_temp.is_open())
+
+        if(sem_close(m_send_sem) == 0)
         {
-            if_temp.close();
+            std::cout<<"sem_close(m_send_sem) successful!"<<std::endl;
+        }
+
+        if(sem_close(m_recv_sem) == 0)
+        {
+            std::cout<<"sem_close(m_recv_sem) successful!"<<std::endl;
         }
     }
     else
     {
+        m_send_sem = sem_open("/my_send_semaphore", O_CREAT, 0644, 0);
+        m_recv_sem = sem_open("/my_recv_semaphore", 0);
+
+        // sem_init(m_recv_sem,1,1);
+        // sem_init(m_send_sem,1,1);
+
+        sem_post(m_send_sem);
         void * ptr = mmap(nullptr,shm_size,PROT_READ|PROT_WRITE,MAP_SHARED,fd,0);
         if(ptr == nullptr)
         {
@@ -753,48 +804,65 @@ void epoll_test::shm_test(bool is_server)
             f_temp_1.close();
         }
 
-        while(true)
+        for(int i = 0;i < 10;++i)
         {
-            if(shm_buffer.write((char *)(&file_length),sizeof(int64_t)) == true)
-            {
-                std::cout<<"write length successful!"<<std::endl;
-                break;
-            }
-        }
-
-        std::ifstream f_temp("nohup.out",std::ios::binary | std::ios::in);
-
-        if(!f_temp.is_open())
-        {
-            std::cerr<<"f_temp open failed!"<<std::endl;
-            return;
-        }
-        else
-        {
-            std::cout<<"f_temp open successful!"<<std::endl;
-        }
-
-        char buffer[10000];
-        int j = 0;
-        while(!f_temp.eof())
-        {
-            memset(buffer,0,10000);
-            f_temp.read(buffer,sizeof(buffer));
-            size_t act_len = f_temp.gcount();
             while(true)
             {
-                if(shm_buffer.write(buffer,act_len))
+                sem_wait(m_send_sem);
+                if(shm_buffer.write((char *)(&file_length),sizeof(int64_t)) == true)
                 {
-                    std::cout<<"file send successful!"<<std::endl;
-                    // std::this_thread::sleep_for(std::chrono::seconds(1));
+                    std::cout<<"write length successful!"<<std::endl;
+                    sem_post(m_recv_sem);
                     break;
                 }
-                // std::this_thread::sleep_for(std::chrono::seconds(1));
+            }
+
+            std::ifstream f_temp("nohup.out",std::ios::binary | std::ios::in);
+
+            if(!f_temp.is_open())
+            {
+                std::cerr<<"f_temp open failed!"<<std::endl;
+                return;
+            }
+            else
+            {
+                std::cout<<"f_temp open successful!"<<std::endl;
+            }
+
+            char buffer[10000];
+            int j = 0;
+            while(!f_temp.eof())
+            {
+                memset(buffer,0,10000);
+                f_temp.read(buffer,sizeof(buffer));
+                size_t act_len = f_temp.gcount();
+                while(true)
+                {
+                    sem_wait(m_send_sem);
+                    if(shm_buffer.write(buffer,act_len))
+                    {
+                        std::cout<<"file send successful!"<<std::endl;
+                        sem_post(m_recv_sem);
+                        // std::this_thread::sleep_for(std::chrono::seconds(1));
+                        break;
+                    }
+                    // std::this_thread::sleep_for(std::chrono::seconds(1));
+                }
+            }
+            if(f_temp.is_open())
+            {
+                f_temp.close();
             }
         }
-        if(f_temp.is_open())
+
+        if(sem_close(m_send_sem) == 0)
         {
-            f_temp.close();
+            std::cout<<"sem_close(m_send_sem) successful!"<<std::endl;
+        }
+
+        if(sem_close(m_recv_sem) == 0)
+        {
+            std::cout<<"sem_close(m_recv_sem) successful!"<<std::endl;
         }
     }
 }
